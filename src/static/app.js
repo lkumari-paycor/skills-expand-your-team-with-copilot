@@ -569,6 +569,15 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="share-section">
+        <button class="share-button" aria-label="Share this activity">📤 Share</button>
+        <div class="share-dropdown hidden">
+          <button class="share-option" data-platform="copy">📋 Copy Link</button>
+          <button class="share-option" data-platform="email">📧 Email</button>
+          <button class="share-option" data-platform="whatsapp">💬 WhatsApp</button>
+          <button class="share-option" data-platform="twitter">🐦 Twitter</button>
+        </div>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -587,7 +596,63 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareDropdown = activityCard.querySelector(".share-dropdown");
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isVisible = !shareDropdown.classList.contains("hidden");
+      // Close all other open dropdowns
+      document.querySelectorAll(".share-dropdown").forEach((d) => {
+        d.classList.add("hidden");
+      });
+      if (!isVisible) {
+        shareDropdown.classList.remove("hidden");
+      }
+    });
+
+    // Add click handlers for each share option
+    const shareOptions = activityCard.querySelectorAll(".share-option");
+    shareOptions.forEach((option) => {
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        shareActivity(name, details, option.dataset.platform);
+        shareDropdown.classList.add("hidden");
+      });
+    });
+
     activitiesList.appendChild(activityCard);
+  }
+
+  // Close share dropdowns when clicking outside
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".share-dropdown").forEach((d) => {
+      d.classList.add("hidden");
+    });
+  });
+
+  // Share an activity via the selected platform
+  function shareActivity(name, details, platform) {
+    const pageUrl = window.location.href.split("?")[0].split("#")[0];
+    const shareUrl = `${pageUrl}?activity=${encodeURIComponent(name)}`;
+    const shareText = `Check out "${name}" at Mergington High School!\n${details.description}\nSchedule: ${formatSchedule(details)}`;
+
+    if (platform === "copy") {
+      navigator.clipboard
+        .writeText(`${shareText}\n${shareUrl}`)
+        .then(() => showMessage("Link copied to clipboard!", "success"))
+        .catch(() => showMessage("Could not copy to clipboard.", "error"));
+    } else if (platform === "email") {
+      const subject = encodeURIComponent(`Join me at ${name} – Mergington High School`);
+      const body = encodeURIComponent(`${shareText}\n\nSign up here: ${shareUrl}`);
+      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    } else if (platform === "whatsapp") {
+      const text = encodeURIComponent(`${shareText}\n${shareUrl}`);
+      window.open(`https://wa.me/?text=${text}`, "_blank");
+    } else if (platform === "twitter") {
+      const tweet = encodeURIComponent(`${shareText}\n${shareUrl}`);
+      window.open(`https://twitter.com/intent/tweet?text=${tweet}`, "_blank");
+    }
   }
 
   // Event listeners for search and filter
